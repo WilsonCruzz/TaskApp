@@ -55,7 +55,7 @@ func main() {
 	app.Get("/api/todos", getTodos)
 	app.Post("/api/todos", createTodo)
 	app.Patch("/api/todos/:id", updateTodo)
-	// app.Delete("/api/todos/:id", deleteTodo)
+	app.Delete("/api/todos/:id", deleteTodo)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -156,4 +156,27 @@ func updateTodo(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"message": "Todo updated successfully"})
 }
 
-// func deleteTodo(c *fiber.Ctx) error {}
+func deleteTodo(c *fiber.Ctx) error {
+	// Retrieve the "id" parameter from the URL
+	id := c.Params("id")
+
+	// Convert the "id" string to a MongoDB ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		// If the ObjectID conversion fails, return a 400 Bad Request error with a message
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
+	}
+
+	// Define the filter to find the Todo item by its ObjectID
+	filter := bson.M{"_id": objectID}
+
+	// Execute the delete operation to remove the Todo item from the collection
+	_, err = collection.DeleteOne(context.Background(), filter)
+	if err != nil {
+		// If there's an error during the deletion, return the error
+		return err
+	}
+
+	// Return a 200 OK status with a success message indicating the Todo was deleted
+	return c.Status(200).JSON(fiber.Map{"message": "Todo deleted successfully"})
+}
