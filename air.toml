@@ -1,0 +1,43 @@
+# Config file for Air
+
+# Working directory
+root = "."
+# Default: "."
+# 說明: 指定 Air 執行時的根目錄。
+
+# Temp folder for binary
+tmp_dir = "tmp"
+# Default: "tmp"
+# 說明: 存放臨時構建二進制文件的目錄。
+
+
+[build]
+    # Binary file name
+    bin = "main"
+    # Default: "app"
+    # 說明: 生成的臨時二進制文件的名稱。
+
+    
+    # Build or main files
+    cmd = "go build -o {{.Output}} {{.Input}}"
+    # Default: ""
+    # 說明: 指定構建命令（可自定義）。
+
+    # 排除監控的文件或目錄
+    exclude = ["tmp/*", "client/*"]
+    # 預設值: []
+    # 說明: 指定不需要被 Air 監控的文件或目錄。
+
+    # 定義需要監控的文件類型
+    include = ["**/*.go"]
+    # 預設值: []
+    # 說明: 使用通配符指定監控的文件，例如這裡是所有 `.go` 文件。
+
+    # 忽略特定文件或目錄
+    ignore = ["tmp/*"]
+    # 預設值: []
+    # 說明: 明確不需要監控的文件或目錄。
+
+
+
+
