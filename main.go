@@ -54,8 +54,8 @@ func main() {
 
 	app.Get("/api/todos", getTodos)
 	app.Post("/api/todos", createTodo)
-	// app.Patch("/api/todos", updateTodo)
-	// app.Delete("/api/todos", deleteTodo)
+	app.Patch("/api/todos/:id", updateTodo)
+	// app.Delete("/api/todos/:id", deleteTodo)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -128,5 +128,32 @@ func createTodo(c *fiber.Ctx) error {
 	return c.Status(201).JSON(todo)
 }
 
-// func updateTodo(c *fiber.Ctx) error {}
+func updateTodo(c *fiber.Ctx) error {
+	// Retrieve the "id" parameter from the URL
+	id := c.Params("id")
+
+	// Convert the "id" string to a MongoDB ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		// If the ObjectID conversion fails, return a 400 Bad Request error with a message
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
+	}
+
+	// Define the filter to find the Todo item by its ObjectID
+	filter := bson.M{"_id": objectID}
+
+	// Define the update operation to set the "completed" field to true
+	update := bson.M{"$set": bson.M{"completed": true}}
+
+	// Execute the update operation in the MongoDB collection
+	_, err = collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		// If there's an error during the update, return the error
+		return err
+	}
+
+	// Return a 200 OK status with a success message
+	return c.Status(200).JSON(fiber.Map{"message": "Todo updated successfully"})
+}
+
 // func deleteTodo(c *fiber.Ctx) error {}
