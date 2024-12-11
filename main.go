@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,14 +10,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Todo struct {
-	ID        int    `json:"_id" bson:"_id"`
-	Completed bool   `json:"completed"`
-	Body      string `json:"body"`
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Completed bool               `json:"completed"`
+	Body      string             `json:"body"`
 }
 
 var collection *mongo.Collection
@@ -51,7 +53,7 @@ func main() {
 	app := fiber.New()
 
 	app.Get("/api/todos", getTodos)
-	// app.Post("/api/todos", createTodo)
+	app.Post("/api/todos", createTodo)
 	// app.Patch("/api/todos", updateTodo)
 	// app.Delete("/api/todos", deleteTodo)
 
@@ -96,6 +98,35 @@ func getTodos(c *fiber.Ctx) error {
 	return c.JSON(todos)
 }
 
-// func createTodo(c *fiber.Ctx) error {}
+func createTodo(c *fiber.Ctx) error {
+	// Create a new Todo object to store the parsed data
+	todo := new(Todo)
+
+	// Parse the request body into the Todo object
+	if err := c.BodyParser(todo); err != nil {
+		// If there is an error while parsing the body, return the error
+		return err
+	}
+
+	// Check if the Body field of the Todo is empty
+	if todo.Body == "" {
+		// If the Body is empty, return a 400 Bad Request with an error message
+		return c.Status(400).JSON(fiber.Map{"error": errors.New("Body is required")})
+	}
+
+	// Insert the new Todo into the MongoDB collection
+	insertResult, err := collection.InsertOne(context.Background(), todo)
+	if err != nil {
+		// If there is an error during the insertion, return the error
+		return err
+	}
+
+	// Set the ID field of the Todo with the inserted document's ID
+	todo.ID = insertResult.InsertedID.(primitive.ObjectID)
+
+	// Return a 201 Created status with the created Todo in the response body
+	return c.Status(201).JSON(todo)
+}
+
 // func updateTodo(c *fiber.Ctx) error {}
 // func deleteTodo(c *fiber.Ctx) error {}
